@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DatingApp.API.Data;
 using DatingApp.API.Dtos;
 using DatingApp.API.Models;
+using DatingApp.API.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -18,9 +19,9 @@ namespace DatingApp.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthRepository _authRepository;
-        private readonly IConfiguration _conf;
+        private readonly IConfigService _conf;
 
-        public AuthController(IAuthRepository authRepository, IConfiguration conf)
+        public AuthController(IAuthRepository authRepository, IConfigService conf)
         {
             _conf = conf;
             _authRepository = authRepository;
@@ -57,14 +58,14 @@ namespace DatingApp.API.Controllers
                 new Claim(ClaimTypes.Name, userFromDb.UserName)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_conf.GetSection("AppSettings:Token").Value));
+            var key = new SymmetricSecurityKey(_conf.Token);
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
             var tokenDescriptor = new SecurityTokenDescriptor()
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.AddDays(int.Parse(_conf.GetSection("AppSettings:TokenExpiresInDays").Value)),
+                Expires = _conf.TokenExpirationDate,
                 SigningCredentials = creds
             };
 
